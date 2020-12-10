@@ -9,3 +9,6 @@
 .bar:hover {
     fill: brown;
 }
+#title, #x-axis, #y-axis {
+    font-weight: bold;
+}
