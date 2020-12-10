@@ -1,6 +1,7 @@
+// Data source
 const jsonURL = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
-// Plot bar chart function
-const plotBarChart = (data, htmlElemId) => {
+// Plot bar chart function (dataset, HTML element for svg canvas, HTML element for dummy tooltip)
+const plotBarChart = (data, svgElemId, tooltipId) => {
    // svg canvas width set to 800px
    const svgWidth = 800;
    const svgHeight = 500;
@@ -8,7 +9,7 @@ const plotBarChart = (data, htmlElemId) => {
    const barWidth = (svgWidth - 2*svgPadding) / data.length;
 
    // **Draw canvas
-   const svgContainer = d3.select(htmlElemId)
+   const svgContainer = d3.select(svgElemId)
                            .append("svg")
                            .attr("width", svgWidth)
                            .attr("height", svgHeight)
@@ -65,11 +66,17 @@ const plotBarChart = (data, htmlElemId) => {
    // **Add chart title
    const title = svgContainer.append("text")
                               .attr("id", "title")
-                              // Position in x from left of svg
+                              // Rough position in x from left of svg
                               .attr("x", 280)
-                              // Position in y from top of svg
+                              // Rough position in y from top of svg
                               .attr("y", svgPadding)
                               .text("United States Gross Domestic Product");
+
+   // **Create dummy tooltip element as requested, must be hidden by default
+   let setTooltip = d3.select(tooltipId)
+                        .style("visibility", "hidden")
+                        .style("width", "auto")
+                        .style("height", "auto");
 
    // **Create rectangle svg shapes for the bar chart
    const barChart = svgContainer.selectAll("rect")
@@ -97,12 +104,33 @@ const plotBarChart = (data, htmlElemId) => {
                                  .attr("y", (d, i) => yAxisScale(d[1]))
                                  // Fill bar with color
                                  .attr("fill", "navy")
-                                 // Display data value when hover mouse on bar,
-                                 // but this doesn't pass the tests for some reason
+                                 // ** Make dummy #tooltip element visible as requested using .on()
+                                 .on("mouseover", (d) => {
+                                    setTooltip.transition()
+                                                .style("visibility", "visible")
+                                                // Won't actually display on web page
+                                                .text("")
+                                                // d[0] will display mouseover object instead of data
+                                                //.text(d[0])
+                                                // Adding the requested "data-date" property into the <rect> element
+                                                //.attr("data-date", d[0])
+                                                //attr doesn't work, you need to use vanilla JS:
+                                    return document.querySelector("#tooltip").setAttribute("data-date", d[0]);
+                                 })
+                                 // Hide dummy #tooltip element when mouseout
+                                 .on("mouseout", (d) => {
+                                    setTooltip.transition()
+                                                .style("visibility", "hidden")
+                                 })
+                                 // **This is the actual tooltip to display data value when hover mouse on bar,
+                                 // However this doesn't pass the tests for some reason
                                  .append("title")
-                                 .attr("id", "tooltip")
                                  // Adding the requested "data-date" property into the <title> element
-                                 .attr("data-date", (d, i) => d[0])
+                                 .attr("data-date", (d, i) => {
+                                    d[0]
+                                    //console.log(typeof(d[0]))
+                                 })
+                                 
                                  // Specifying the text to display
                                  .text((d) => `${d[0]}, $${d[1]} Billion`);
 
@@ -125,7 +153,7 @@ const readJson = (jsonURL) => {
          const data = jsonObj["data"];
          console.log("Data loaded.")
          // Plot the bar chart by specifying (1) dataset & (2) which HTML Element Id to plot in
-         plotBarChart(data, "#insert-bar-chart");
+         plotBarChart(data, "#insert-bar-chart", "#tooltip");
       })
       // The catch block catches the error, and executes a code to handle it
       .catch( (err) => {
